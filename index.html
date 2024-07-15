@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cfx Finder</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: rgb(42, 43, 49);
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            text-align: center;
+        }
+        .auth-buttons {
+            margin-bottom: 20px;
+            opacity: 1; /* Pokaż formularz logowania na początku */
+            transition: opacity 0.5s ease-in-out; /* Dodaj animację opacity */
+        }
+        .auth-buttons input,
+        .auth-buttons button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: none;
+            background-color: #222427;
+            color: white;
+            cursor: pointer;
+        }
+        .auth-buttons button:hover {
+            background-color: rgba(17, 14, 14, 0.404);
+        }
+        .finder {
+            opacity: 0; /* Ukryj panel Cfx Finder na początku */
+            margin-top: 20px;
+            transition: opacity 0.5s ease-in-out; /* Dodaj animację opacity */
+        }
+        .finder input,
+        .finder button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: none;
+            background-color: #222427;
+            color: white;
+            cursor: pointer;
+        }
+        .finder button:hover {
+            background-color: rgba(17, 14, 14, 0.404);
+        }
+        .box {
+            padding: 20px;
+            background-color: rgba(17, 14, 14, 0.404);
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .details {
+            text-align: left;
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            background-color: rgba(17, 14, 14, 0.404);
+            opacity: 0; /* Ukryj szczegóły na początku */
+            transition: opacity 0.5s ease-in-out; /* Dodaj animację opacity */
+        }
+        .details.show-details {
+            opacity: 1; /* Pokaż szczegóły po zalogowaniu */
+        }
+        .details div {
+            margin-bottom: 10px;
+        }
+
+        /* Dodaj kolory dla ról */
+        .role-admin {
+            color: red;
+        }
+
+        .role-user {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="box">
+            <h1>Cfx Finder</h1>
+        </div>
+
+        <div id="login-form" class="auth-buttons">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+        
+        <div id="finder" class="finder">
+            <input type="text" id="visualzCfx" placeholder="Enter Cfx.re link">
+            <button onclick="visualzApi()">Find</button>
+        </div>
+
+        <div id="details" class="details">
+            <div class="ServerName" id="serverName">Server Name:</div>
+            <div id="serverGamebuild">Gamebuild:</div>
+            <div id="serverPlayers">Players:</div>
+            <div id="serverOnesync">Onesync:</div>
+            <div id="serverAddress">Server Ip Address:</div>
+            <div id="playersJson">Players json:</div>
+            <div id="dynamicJson">Dynamic json:</div>
+            <div id="infoJson">Info json:</div>
+            <div id="serverCountry">Country:</div>
+            <div id="serverISP">ISP:</div>
+            <div id="serverOwner">Owner Profile:</div>
+            <div id="ping"></div>
+            <div id="userInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        (function (root, factory) {
+            if (typeof define === 'function' && define.amd) {
+                define([], factory);
+            } else if (typeof module === 'object' && module.exports) {
+                module.exports = factory();
+            } else {
+                root.ping = factory();
+            }
+        }(this, function () {
+            function request_image(url) {
+                return new Promise(function(resolve, reject) {
+                    var img = new Image();
+                    img.onload = function() { resolve(img); };
+                    img.onerror = function() { reject(url); };
+                    img.src = url + '?random-no-cache=' + Math.floor((1 + Math.random()) * 0x10000).toString(16);
+                });
+            }
+
+            function ping(url, multiplier) {
+                return new Promise(function(resolve, reject) {
+                    var start = (new Date()).getTime();
+                    var response = function() { 
+                        var delta = ((new Date()).getTime() - start);
+                        delta *= (multiplier || 1);
+                        resolve(delta); 
+                    };
+                    request_image(url).then(response).catch(response);
+
+                    setTimeout(function() { reject(Error('Timeout')); }, 5000);
+                });
+            }
+
+            return ping;
+        }));
+
+        var do_ping = function() {
+            ping(document.getElementById('playersJson').innerText.trim()).then(function(delta) {
+                //document.getElementById('ilePing').innerHTML = "Server ping: " + delta + "ms";
+            }).catch(function(error) {
+                alert(String(error));
+            });
+        };
+
+        function login() {
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+
+            var users = {
+                "ford": { password: "eloelo", role: "admin" },
+                "user1": { password: "pass1", role: "user" },
+                "user2": { password: "pass2", role: "user" }
+                // Dodaj więcej użytkowników w takim formacie
+            };
+
+            if (username in users && users[username].password === password) {
+                alert("Login successful!");
+
+                // Animacja przejścia
+                document.getElementById('login-form').style.opacity = '0'; // Ukryj formularz logowania
+                document.getElementById('finder').style.opacity = '1'; // Pokaż panel Cfx Finder
+                document.getElementById('details').classList.add('show-details'); // Pokaż szczegóły
+
+                // Ustawienie koloru na podstawie roli
+                var roleColorClass = users[username].role === 'admin' ? 'role-admin' : 'role-user';
+                document.getElementById('userInfo').innerHTML = `Logged in as: <span class="${roleColorClass}">${username}</span> (Role: <span class="${roleColorClass}">${users[username].role}</span>)`;
+
+            } else {
+                alert("Invalid username or password");
+            }
+        }
+
+        const visualzApi = () => {
+            var visualzIpReplace = document.getElementById('visualzCfx').value;
+            var visualzIP = visualzIpReplace.replace("cfx.re/join/", "");
+            const xhr = new XMLHttpRequest();
+            const url = `https://servers-frontend.fivem.net/api/servers/single/${visualzIP}`;
+            xhr.open('GET', url);
+
+            xhr.responseType = 'json';
+
+            xhr.onload = () => {
+                const data = xhr.response;
+                var text = data['Data']['hostname'];
+                var serverName = text.replace(/\^1/g, "").replace(/\^2/g, "").replace(/\^3/g, "").replace(/\^4/g, "").replace(/\^5/g, "").replace(/\^6/g, "").replace(/\^7/g, "").replace(/\^8/g, "").replace(/\^9/g, "").replace(/\^0/g, "");
+                document.getElementById('serverName').innerHTML = "Server Name: " + serverName;
+
+                var gamebuild = data['Data']['vars']['sv_enforceGameBuild'];
+                document.getElementById('serverGamebuild').innerHTML = "Gamebuild: " + gamebuild;
+
+                var playersOnline = data['Data']['clients'];
+                var maxPlayers = data['Data']['sv_maxclients'];
+                document.getElementById('serverPlayers').innerHTML = "Players: " + playersOnline + "/" + maxPlayers;
+
+                var onesync = data['Data']['vars']['onesync_enabled'];
+                document.getElementById('serverOnesync').innerHTML = "Onesync: " + onesync;
+
+                var address = data['Data']['connectEndPoints']['0'];
+                if (address !== undefined) {
+                    if (address.startsWith('http')) {
+                        const xhr2 = new XMLHttpRequest();
+                        const owner = data['Data']['ownerName'];
+                        const url2 = `https://${owner}-${visualzIP}.users.cfx.re/client`;
+                        xhr2.open('POST', url2, true);
+                        xhr2.responseType = 'json';
+                        xhr2.onload = () => {
+                            const dataip = xhr2.response;
+                            var ip = dataip[0];
+                            document.getElementById('serverAddress').innerHTML = "Server Ip Address: " + ip;
+
+                            var visualzIpxx = ip.split(":");
+                            var ipx = visualzIpxx[0];
+                            const xhr3 = new XMLHttpRequest();
+                            const url3 = `http://ip-api.com/json/${ipx}`;
+                            xhr3.open('GET', url3, true);
+                            xhr3.responseType = 'json';
+                            xhr3.onload = () => {
+                                const dataip = xhr3.response;
+                                var country = dataip['country'] || 'Timeout';
+                                var isp = dataip['isp'] || 'Timeout';
+                                var city = dataip['city'] || 'Timeout';
+
+                                document.getElementById('serverCountry').innerHTML = "Country: " + country;
+                                document.getElementById('serverISP').innerHTML = "ISP: " + isp;
+                            };
+                            xhr3.send();
+                        };
+                        xhr2.send();
+                    } else {
+                        document.getElementById('serverAddress').innerHTML = "Server Ip Address: " + address;
+                        document.getElementById('playersJson').innerHTML = "Players json: <a href='http://" + address + "/players.json'>" + "http://" + address + "/players.json</a>";
+                        document.getElementById('dynamicJson').innerHTML = "Dynamic json: <a href='http://" + address + "/dynamic.json'>" + "http://" + address + "/dynamic.json</a>";
+                        document.getElementById('infoJson').innerHTML = "Info json: <a href='http://" + address + "/info.json'>" + "http://" + address + "/info.json</a>";
+                    }
+                } else {
+                    alert("Server address not found.");
+                }
+            };
+
+            xhr.send();
+        };
+    </script>
+</body>
+</html>
